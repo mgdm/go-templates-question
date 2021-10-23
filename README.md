@@ -1,0 +1,3 @@
+I had hoped that I could build a webapp and embed all the templates using `//go:embed`, parse them all into one `template.Template` instance, and then later use `ExecuteTemplate` on that to render the right template for each page. However, I can't seem to make that work, I get the wrong template executed no matter what order I load the templates in, and whether I use `ParseFiles`, `ParseFS`, or `ParseGlob`.
+
+Anyone know why? Do I need a separate `template.Template` instance for each page?
