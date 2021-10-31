@@ -1,0 +1,53 @@
+I think you are overwriting the initial defined templates from the inside. Eg you define you base, and then try to render the about page.
+The about page tries to render the base page so it's a nested loop. It looks as though you need to get the about template instance to then in turn render
+into the main template....wow that's confusing huh?
+
+To be fair I hate Go templating also and have written some posts about it along with creating a lib for my own needs (out of scope for this though).
+Refer https://www.kylehq.com/tags/go/ & https://gitlab.com/kylehqcom/stencil if you want to.
+
+
+I had a play with a simple example. Eg
+
+  t, _ := template.ParseFiles(
+		"./src/www/templates/index.html",
+		"./src/www/templates/privacy.html",
+	)
+	fmt.Println(t.DefinedTemplates())
+	t.ExecuteTemplate(w, "privacy.html", nil)
+	fmt.Println(t.DefinedTemplates())
+	tt := t.Lookup("privacy.html")
+	if tt != nil {
+		tt.Execute(w, "content")
+		fmt.Println(tt.Name())
+	}
+
+// What is cray here is what the DefinedTemplates output
+
+; defined templates are: "privacy.html", "base", "index.html", "content"
+; defined templates are: "base", "index.html", "content"
+privacy.html
+
+Notice that one the main "t" template executes "privacy.html", it is no longer in the defined list!
+
+The body of the index.html has a template named (not defined) as content
+
+<!DOCTYPE html>
+<html lang="en">
+    {{template "public/www/_head.html" .}}
+
+    <body class="bg-primary">
+        {{template "content" .}}
+    </body>
+</html>
+
+So I lookup the privacy.html template, and execute or pipe that privacy template into the content template which renders as expected
+
+tt := t.Lookup("privacy.html")
+if tt != nil {
+  tt.Execute(w, "content")
+  fmt.Println(tt.Name())
+}
+
+I hope this helps, the embed FS stuff is all ok - it's just the nesting. Templates are only one way, eg the outer can pipe things to the inners. 
+I also make use of the "clone" func which is why I think the privacy.html is dropped from the defined templates once rendered. Though this is
+speculation as I haven't tested/proved.
